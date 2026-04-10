@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 import re
 
-TOKEN = "8640756422:AAGewj7t2AK18p7NlSY5QR01KAGrwm3Rta4"
+TOKEN = os.getenv("TOKEN")
 
 arquivo = "base_dados.xlsx"
 arquivo_regras = "regras.xlsx"
