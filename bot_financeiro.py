@@ -4,7 +4,10 @@ import pandas as pd
 from datetime import datetime
 import os
 import re
+import threading
+from flask import Flask
 
+# pega token do Render
 TOKEN = os.getenv("TOKEN")
 
 arquivo = "base_dados.xlsx"
@@ -27,7 +30,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.lower()
 
     try:
-        # pega o valor em qualquer parte da frase
+        # pega valor em qualquer lugar da frase
         match = re.search(r"(\d+[.,]?\d*)", texto)
 
         if not match:
@@ -37,7 +40,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         valor_texto = match.group(1).replace(",", ".")
         valor = float(valor_texto)
 
-        # remove o valor da frase pra pegar descrição
+        # remove o valor da frase
         descricao = texto.replace(match.group(1), "").strip()
 
         # identificar entrada ou saída
@@ -76,8 +79,23 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("Erro:", e)
         await update.message.reply_text("❌ Erro ao processar mensagem")
 
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
+# ===== TELEGRAM =====
+def run_bot():
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
+    print("🤖 Bot rodando...")
+    app.run_polling()
 
-print("🤖 Bot rodando...")
-app.run_polling()
+# ===== FLASK (pra manter vivo no Render) =====
+app_web = Flask(__name__)
+
+@app_web.route('/')
+def home():
+    return "Bot rodando!"
+
+def run_web():
+    app_web.run(host="0.0.0.0", port=10000)
+
+# roda tudo junto
+threading.Thread(target=run_bot).start()
+run_web()
